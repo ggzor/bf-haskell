@@ -33,9 +33,17 @@ type Imperative m =
   , MonadFail m
   )
 
+clampChar = max (-128) . min 127
+
 theDataPointer f s@BFState{dataPointer} = s{dataPointer = f dataPointer}
 theCurrentByte f s@BFState{dataCells, dataPointer} =
-  s{dataCells = M.alter ((<|> Just 1) . fmap (max 0 . min 255 . f)) dataPointer dataCells}
+  s
+    { dataCells =
+        M.alter
+          ((<|> Just (clampChar . f $ 0)) . fmap (clampChar . f))
+          dataPointer
+          dataCells
+    }
 theInstructionPointer f s@BFState{instructionPointer} = s{instructionPointer = f instructionPointer}
 
 readByte :: Imperative m => m Int
