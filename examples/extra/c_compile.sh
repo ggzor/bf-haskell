@@ -13,17 +13,17 @@ int main() {
 
 ";
 
-(
-sed -e 's/[^]\[\+\< \>,\. -]//g' \
-  | sed -e 's/\+/++*p;/g' \
-  | sed -e 's/-/--*p;/g' \
-  | sed -e 's/</--p;/g' \
-  | sed -e 's/>/++p;/g' \
-  | sed -e 's/\./putchar(*p);/g' \
-  | sed -e 's/,/*p = getchar();/g' \
-  | sed -e 's/\[/while(*p) {/g' \
-  | sed -e 's/]/}/g'
-) < "$1"
+sed -e '
+s/[^]\[\+\< \>,\. -]//g;
+s/\+/++*p;/g;
+s/-/--*p;/g;
+s/</--p;/g;
+s/>/++p;/g;
+s/\./putchar(*p);/g;
+s/,/*p = getchar();/g;
+s/\[/while(*p) {/g;
+s/]/}/g;
+' < "$1"
 
 printf "
 }
