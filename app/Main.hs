@@ -10,6 +10,7 @@ import Control.Monad.Trans.Maybe (MaybeT (runMaybeT))
 import Control.Monad.Writer
 import Data.Char (chr, ord)
 import Data.Function ((&))
+import Data.Int
 import qualified Data.IntMap.Strict as M
 import Data.Maybe (fromMaybe)
 import System.Environment
@@ -19,7 +20,7 @@ type Program = M.IntMap Char
 
 data BFState = BFState
   { input :: [Char]
-  , dataCells :: M.IntMap Int
+  , dataCells :: M.IntMap Int8
   , dataPointer :: Int
   , instructionPointer :: Int
   }
@@ -33,20 +34,18 @@ type Imperative m =
   , MonadFail m
   )
 
-clampChar = max (-128) . min 127
-
 theDataPointer f s@BFState{dataPointer} = s{dataPointer = f dataPointer}
 theCurrentByte f s@BFState{dataCells, dataPointer} =
   s
     { dataCells =
         M.alter
-          ((<|> Just (clampChar . f $ 0)) . fmap (clampChar . f))
+          ((<|> Just (f 0)) . fmap f)
           dataPointer
           dataCells
     }
 theInstructionPointer f s@BFState{instructionPointer} = s{instructionPointer = f instructionPointer}
 
-readByte :: Imperative m => m Int
+readByte :: Imperative m => m Int8
 readByte = do
   BFState{dataCells, dataPointer} <- get
   pure . fromMaybe 0 $ M.lookup dataPointer dataCells
@@ -88,10 +87,10 @@ runProgram = do
     '<' -> modify (theDataPointer (+ (-1)))
     '+' -> modify (theCurrentByte (+ 1))
     '-' -> modify (theCurrentByte (+ (-1)))
-    '.' -> readByte >>= tell . (: []) . chr
+    '.' -> readByte >>= tell . (: []) . chr . fromIntegral
     ',' -> do
       (c : remaining) <- gets input
-      modify (theCurrentByte (const . ord $ c))
+      modify (theCurrentByte (const . fromIntegral . ord $ c))
       modify (\s -> s{input = remaining})
     '[' ->
       readByte >>= \case
